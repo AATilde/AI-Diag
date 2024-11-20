@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Skin Cancer Classifier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    img { max-width: 300px; margin: 20px auto; display: block; }
+  </style>
+</head>
+<body>
+  <h1>Skin Cancer Detection</h1>
+  <input type="file" id="fileInput" accept="image/*" />
+  <button onclick="predict()">Classify Image</button>
+  <p id="status">Status: Loading model...</p>
+  <img id="uploadedImage" src="" alt="Uploaded Image" />
+  <div id="output"></div>
+
+  <script>
+    let model;
+    async function loadModel() {
+      model = await tf.loadLayersModel('model/model.json');
+      document.getElementById('status').innerText = "Status: Model loaded successfully!";
+    }
+
+    async function predict() {
+      const fileInput = document.getElementById('fileInput');
+      const imgElement = document.getElementById('uploadedImage');
+      const output = document.getElementById('output');
+
+      if (!fileInput.files.length) {
+        alert("Please upload an image.");
+        return;
+      }
+
+      // Display the uploaded image
+      const file = fileInput.files[0];
+      imgElement.src = URL.createObjectURL(file);
+
+      // Wait for the image to load
+      imgElement.onload = async () => {
+        const tensor = tf.browser.fromPixels(imgElement)
+          .resizeBilinear([170, 170]) // Adjust this size if necessary
+          .expandDims(0)
+          .div(255); // Normalize the pixel values
+
+        const prediction = model.predict(tensor);
+        const result = prediction.arraySync();
+
+        // Display the result
+        output.innerHTML = `<p>Prediction: ${JSON.stringify(result)}</p>`;
+      };
+    }
+
+    loadModel();
+  </script>
+</body>
+</html>
